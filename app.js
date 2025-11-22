@@ -469,11 +469,10 @@ bot.action("menu_back", async (ctx) => {
     {
       reply_markup: {
         inline_keyboard: [
-          [{ text: "🚀 Купить подписку", callback_data: "buy_subscription" }],
-          [{ text: "📘 Как это работает", callback_data: "how_it_works" }],
-          [{ text: "👨 Личный кабинет", callback_data: "my_profile" }],
-          [{ text: "💳 Пополнить баланс", callback_data: "pay_balance" }],
-          [{ text: "👨‍💻 Поддержка", callback_data: "help" }]
+        [{ text: "📘 Как это работает", callback_data: "how_it_works" }, { text: "🚀 Купить подписку", callback_data: "buy_subscription" }],
+        [{ text: "👨 Личный кабинет", callback_data: "my_profile" }],
+        [{ text: "💳 Пополнить баланс", callback_data: "pay_balance" }],
+        [{ text: "👨‍💻 Поддержка", callback_data: "help" }]
         ]
       },
     }
@@ -606,6 +605,92 @@ ctx.replyWithPhoto("https://i.ibb.co/0jmGR3S4/card-1000.jpg", {
 });
 
 
+// new methods
+bot.action("my_profile", async (ctx) => {
+  const { id } = ctx.from;
+  const user = await dataBase.findOne({ id });
+  //const refLink = `https://t.me/primeWave_bot?start=ref_${user.ref_code}`;
+  ctx.editMessageMedia({
+    type: "photo",
+    media:"https://i.ibb.co/0VtRR6ts/card-menu-prime-Wave.jpg", 
+    caption: `<b>👤 Личный кабинет</b>
+<blockquote>🆔 ID: ${user.id}
+💰 Баланс: ${user.balance}₽
+🔐 Текущая подписка: нет
+👥 Рефералы: ${user.referrals}
+</blockquote>
+`,
+    parse_mode: "HTML"
+    },
+    {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🤝 Реферальная система", callback_data: "referral_system" }],
+        [{ text: "Назад", callback_data: "menu_back" }]
+      ]
+    },
+  });
+});
+
+
+bot.action("referral_system", async (ctx) => {
+  const { id } = ctx.from;
+  const user = await dataBase.findOne({ id });
+  const refLink = `https://t.me/primeWave_bot?start=ref_${user.ref_code}`;
+  ctx.editMessageMedia({
+    type: "photo",
+    media:"https://i.ibb.co/0VtRR6ts/card-menu-prime-Wave.jpg", 
+    caption: `<b>🤝 Реферальная система</b>
+
+<b>🔗 Ваша приглашательная ссылка:</b>
+<code>${refLink}</code>
+
+<b>👥 Количество рефералов: ${user.referrals}</b>
+
+<b>💸 Ваш бонус:</b>
+<blockquote>Вы получаете 20% от каждого пополнения 
+баланса, сделанного вашим рефералом.
+Зарабатывайте, просто приглашая друзей!</blockquote>`,
+    parse_mode: "HTML"
+    },
+    {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Назад", callback_data: "my_profile" }]
+      ]
+    },
+  });
+});
+
+
+
+bot.action("buy_subscription", async (ctx) => {
+  const { id } = ctx.from;
+  const user = await dataBase.findOne({ id });
+  const refLink = `https://t.me/primeWave_bot?start=ref_${user.ref_code}`;
+  ctx.editMessageMedia({
+    type: "photo",
+    media:"https://i.ibb.co/0VtRR6ts/card-menu-prime-Wave.jpg", 
+    caption: `<b>Подписки</b>
+
+<blockquote>💰 Баланс: ${user.balance}₽</blockquote>
+
+<blockquote>Здесь все представленные подписки. Чем выше уровень тем больше возможностей.</blockquote>`,
+    parse_mode: "HTML"
+    },
+    {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🌟 Уровень 1", callback_data: "subscription_level_1" }],
+        [{ text: "🌟 Уровень 2", callback_data: "subscription_level_2" }],
+        [{ text: "🌟 Уровень 3", callback_data: "subscription_level_3" }],
+          
+        [{ text: "Назад", callback_data: "menu_back" }]
+      ]
+    },
+  });
+});
+
 
 
 
@@ -657,9 +742,8 @@ bot.command("start", async (ctx) => {
         id,
         first_name,
         username,
-        language_code,
         referrals: 0,
-        bonus: true,
+        isBanned: false,
         ref_code: refCode(),
         prefer: refHashRaw ? refHashRaw.split("_")[1] : 0 ,
         date: dateNow(),
@@ -774,8 +858,7 @@ bot.launch();
 // Дополнительный функционал
 
 function refCode(n = 6) {
-  const symbols =
-    "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890";
+  const symbols = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890";
   let user_hash = "";
   for (let i = 0; i != n; i++) {
     user_hash += symbols[Math.floor(Math.random() * symbols.length)];
