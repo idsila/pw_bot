@@ -566,11 +566,11 @@ bot.action("my_profile", async (ctx) => {
     type: "photo",
     media:"https://i.ibb.co/2789JGYq/card-my-profile-prime-Wave.jpg", 
     caption: `<b>👤 Личный кабинет</b>
-<blockquote>🆔 ID: ${user.id}
-💰 Баланс: ${user.balance}₽
-🔐 Текущая подписка: ${user.subscription ?? 'Нет' }
-📅 Дней подписки осталось: ${daysSub || '0'}
-👥 Рефералы: ${user.referrals}
+<blockquote>🆔 ID: ${ user.id }
+💰 Баланс: ${ user.balance } ₽
+🔐 Текущая подписка: ${ user.subscription ?? 'Нет' }
+📅 Дней подписки осталось: ${ daysSub < 0 ? '0' : daysSub }
+👥 Рефералы: ${ user.referrals }
 </blockquote>
 `,
     parse_mode: "HTML"
@@ -629,7 +629,7 @@ bot.action("buy_subscription", async (ctx) => {
       caption: `<b>⚠️ У вас уже есть активная подписка</b>
 ✨ Наслаждайтесь всеми возможностями без ограничений!
 
-📅 <b>Дней подписки осталось:</b> <code>${daysSub || '0'}</code>`,
+📅 <b>Дней подписки осталось:</b> <code>${ daysSub < 0 ? '0' : daysSub }</code>`,
       parse_mode: "HTML"
     },
     {
