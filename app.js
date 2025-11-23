@@ -401,7 +401,7 @@ bot.action("pay_balance", async (ctx) => {
   await ctx.editMessageMedia(
     {
       type: "photo",
-      media: "https://i.ibb.co/tTQ574gv/card-1002.jpg",
+      media: "https://i.ibb.co/prjBrKj4/card-up-to-pay.jpg",
       caption: "<b>💸 Это все способы пополнения баланса.</b>",
       parse_mode: "HTML",
     },
@@ -426,7 +426,7 @@ bot.action("pay_umoney", async (ctx) => {
   await ctx.editMessageMedia(
     {
       type: "photo",
-      media: "https://i.ibb.co/fbWNWJY/card-1003.jpg",
+      media: "https://i.ibb.co/kg7GcVmQ/card-yoomoney.jpg",
       caption: "<b>💸 Это пополнения баланса через карту или ЮMoney.</b>",
       parse_mode: "HTML",
     },
@@ -451,7 +451,7 @@ bot.action("pay_crypto", async (ctx) => {
   await ctx.editMessageMedia(
     {
       type: "photo",
-      media: "https://i.ibb.co/JRwY2T6L/card-1004.jpg",
+      media: "https://i.ibb.co/Y7vhFDm4/card-crypto.jpg",
       caption: "<b>💸 Это пополнения баланса через Крипту.</b>",
       parse_mode: "HTML",
     },
