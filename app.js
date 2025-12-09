@@ -7,12 +7,16 @@ const DB = require("./connectDB.js");
 const dataBase = DB.connect('pw_bot');
 const orderBase = DB.connect('pw_orders_bot');
 
+const subsBase = DB.connect('pw_subscription');
+
 const { Telegraf, session, Scenes } = require("telegraf");
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const app = express();
 const querystring = require("querystring");
+const { futimesSync } = require("fs");
+const { sourceMapsEnabled } = require("process");
 
 // Переменные для работы
 const ADMIN_ID = process.env.ADMIN_ID;
@@ -33,11 +37,34 @@ bot.use(
   })
 );
 
-
-
-
-
 bot.telegram.setMyCommands(commands);
+
+// subsBase
+
+const SUBS = { };
+
+async function updateSubs(){
+  const res = await subsBase.find({}).toArray();
+  res.forEach((item) => {
+    SUBS[item.title] = item;
+  });
+}
+updateSubs();
+
+
+// subsBase.insertOne({ 
+//   title: 'Уровень 1',
+//   price: 100,
+//   max_accounts: 1,
+//   max_posts: 5 
+// });
+
+
+
+
+
+
+
 
 
 
@@ -626,6 +653,8 @@ bot.action("buy_subscription", async (ctx) => {
       caption: `<b>⚠️ У вас уже есть активная подписка</b>
 ✨ Наслаждайтесь всеми возможностями без ограничений!
 
+<b>🔰 Ваш уровень подписки: ${ user.subscription }</b>
+
 📅 <b>Дней подписки осталось:</b> <code>${ daysSub < 0 ? '0' : daysSub }</code>`,
       parse_mode: "HTML"
     },
@@ -639,6 +668,17 @@ bot.action("buy_subscription", async (ctx) => {
   });
   }
   else{
+    if(!SUBS['1']){
+      await updateSubs();
+    }
+    const arr_keyboard = [];
+    for(const name in SUBS){
+      const item = SUBS[name];
+      arr_keyboard.push([{ text: `🌟 Уровень ${ item.title } - ${ item.price }₽`, callback_data: `subscription_level_${item.title}` }]);
+    }
+    arr_keyboard.push([{ text: "<< Назад", callback_data: "menu_back" }]);
+
+
     ctx.editMessageMedia({
       type: "photo",
       media:"https://i.ibb.co/GfPL935Q/card-subscription-prime-Wave.jpg", 
@@ -649,25 +689,30 @@ bot.action("buy_subscription", async (ctx) => {
     },
     {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: "🌟 Уровень 1 - 150₽", callback_data: "subscription_level_1" }],
-        [{ text: "<< Назад", callback_data: "menu_back" }]
-      ]
+      inline_keyboard: arr_keyboard
     },
   });
   }
 });
 
-bot.action("subscription_level_1", async (ctx) => {
+
+
+bot.action(/^subscription_level_/i, async (ctx) => {
+  const { id } = ctx.from;
+  const level = ctx.match.input.split("subscription_level_")[1];
+  const item = SUBS[level];
+
+
   ctx.editMessageMedia({
     type: "photo",
     media:"https://i.ibb.co/GfPL935Q/card-subscription-prime-Wave.jpg", 
-    caption: `<b>🌟 Уровень 1 — 150₽/неделя</b>
+    caption: `<b>🌟 Уровень ${item.title} — ${item.price}₽/неделя</b>
 
 <b>Что даёт:</b>
-<blockquote>👤 Авторизация 1 аккаунта
-📡 Отслеживание до 3 каналов
-💬 До 6 заранее сохранённых комментариев
+<blockquote><b>👤 ${item.description}</b>
+🔐 Авторизация ${item.max_accounts} аккаунта
+📡 Отслеживание до ${item.max_posts} каналов
+💬 До ${item.max_posts} заранее сохранённых комментариев
 ⏱️ Настройка задержки перед отправкой</blockquote>
 `,
     parse_mode: "HTML"
@@ -675,26 +720,33 @@ bot.action("subscription_level_1", async (ctx) => {
     {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "💳 Купить", callback_data: "buy_subscription_level_1" }],  
+        [{ text: "💳 Купить", callback_data: `buy_subscription_level_${level}` }],  
         [{ text: "<< Назад", callback_data: "buy_subscription" }]
       ]
     },
   });
+
+
+
+
 });
 
-bot.action("buy_subscription_level_1", async (ctx) => {
+
+bot.action(/^buy_subscription_level_/i, async (ctx) => {
   const { id } = ctx.from;
+  const level = ctx.match.input.split("buy_subscription_level_")[1];
+  const item = SUBS[level];
   //864e5*7
   const user = await dataBase.findOne({ id });
-  if(user.balance >= 150 && !user.subscription){
-    await dataBase.updateOne({ id }, { $set: { subscription: 'Уровень 1', activation_sub: (dateNow()+864e5*7) } });
-    await dataBase.updateOne({ id }, { $inc: { balance: -150 } });
+  if(user.balance >= item.price && !user.subscription){
+    await dataBase.updateOne({ id }, { $set: { subscription: level, activation_sub: (dateNow()+864e5*7) } });
+    await dataBase.updateOne({ id }, { $inc: { balance: (item.price*-1) } });
     ctx.editMessageMedia({
       type: "photo",
       media:"https://i.ibb.co/GfPL935Q/card-subscription-prime-Wave.jpg", 
       caption: `<b>🎉 Подписка оформлена!</b>
 
-<b>🔰 Ваш уровень подписки: 1</b>
+<b>🔰 Ваш уровень подписки: ${ level }</b>
 
 Спасибо, что выбрали <b>PrimeWave</b> 🌟
 Ваша подписка успешно активирована — теперь вам доступны расширенные возможности и автоматическая отправка комментариев.
@@ -710,7 +762,7 @@ bot.action("buy_subscription_level_1", async (ctx) => {
       },
     });
   }
-  else if(user.balance < 150){
+  else if(user.balance < item.price){
     ctx.editMessageMedia({
       type: "photo",
       media:"https://i.ibb.co/GfPL935Q/card-subscription-prime-Wave.jpg", 
@@ -823,7 +875,7 @@ bot.command("drops", async (ctx) => {
 });
 bot.command("add", async (ctx) => {
   const { id } = ctx.from;
-  dataBase.updateOne({ id }, { $set: { balance: 300 } }).then(async (res) => { 
+  dataBase.updateOne({ id }, { $set: { balance: 400 } }).then(async (res) => { 
     ctx.reply('+ 1000');
   });
 });
@@ -958,23 +1010,28 @@ app.post("/telegram/send-photo", async (req, res) => {
 async function checkSubscription() {
   const USERS = await dataBase.find({}).toArray();
   const CURRENT_TIME = dateNow();
+  if(!SUBS['1']){
+    await updateSubs();
+  }
 
+  // 864e5*7
   USERS.forEach((user) => {
     if(user.subscription && (user.activation_sub - CURRENT_TIME) < 0){
-      if(user.balance >= 150){
+      if(user.balance >= SUBS[user.subscription].price ){
         dataBase.updateOne({ id: user.id }, { $set: { activation_sub: CURRENT_TIME+864e5*7 } });
-        dataBase.updateOne({ id: user.id }, { $inc: { balance: -150 } });
-        bot.telegram.sendMessage(user.id, "<b>Подписка была продлена автоматически</b>", { parse_mode: "HTML" });
+        dataBase.updateOne({ id: user.id }, { $inc: { balance: (SUBS[user.subscription].price*-1) } });
+        bot.telegram.sendMessage(user.id, `<b>Подписка была продлена автоматически</b> \n <blockquote><b>🔰 Ваш уровень подписки: ${ user.subscription }</b> </blockquote>`, { parse_mode: "HTML" });
       }
       else{
         dataBase.updateOne({ id: user.id }, { $set: { activation_sub: 0,  subscription: null } });
-        bot.telegram.sendMessage(user.id, "<b>Подписка не была продленна на вашем счету мало средств</b>", { parse_mode: "HTML" });
+        bot.telegram.sendMessage(user.id, `<b>Подписка не была продленна на вашем счету мало средств</b> \n <blockquote><b>🔰 Ваш уровень подписки был: ${ user.subscription }</b> </blockquote>`, { parse_mode: "HTML" });
       }
     }
   });
 }
 checkSubscription();
 setInterval(checkSubscription, 60000*30);
+//60000*30
 
 // WebHook Crypto Api
 app.post("/pay", async (req, res) => {
