@@ -15,8 +15,7 @@ const axios = require("axios");
 const cors = require("cors");
 const app = express();
 const querystring = require("querystring");
-const { futimesSync } = require("fs");
-const { sourceMapsEnabled } = require("process");
+
 
 // Переменные для работы
 const ADMIN_ID = process.env.ADMIN_ID;
@@ -31,15 +30,17 @@ const bot = new Telegraf(process.env.TOKEN);
 
 bot.use(
   session({
-    defaultSession: () => ({ write_user: false }),
-    defaultSession: () => ({ write_admin: false }),
-    defaultSession: () => ({ order_scena: false }),
+    defaultSession: () => ({ write_user: false, write_admin: false, order_scena: false })
+
   })
 );
 
+// defaultSession: () => ({ write_admin: false }),
+// defaultSession: () => ({ order_scena: false }),
+
+
 bot.telegram.setMyCommands(commands);
 
-// subsBase
 
 const SUBS = { };
 
@@ -52,12 +53,7 @@ async function updateSubs(){
 updateSubs();
 
 
-// subsBase.insertOne({ 
-//   title: 'Уровень 1',
-//   price: 100,
-//   max_accounts: 1,
-//   max_posts: 5 
-// });
+
 
 
 
@@ -212,6 +208,13 @@ bot.use(stage.middleware());
 
 
 // Действия по нажатию inline кнопки
+bot.action(/^user/i, async (ctx) => {
+  if (!ctx.session.write_admin) {
+    ctx.session.write_admin = false;
+    const [, id, username] = ctx.match.input.split("_");
+    ctx.scene.enter("write_help_admin", { id, username });
+  }
+});
 
 bot.action(/^status_order_/i, async (ctx) => {
   const [,, order] = ctx.match.input.split("_");
@@ -364,8 +367,14 @@ bot.action(/^umoney_lable_/i, async (ctx) => {
       orderBase.findOne({ lable: currenLable }).then(async (order) => {
         ctx.reply(`<b>✅ Оплата подтверждена #${currenLable}</b>
 <blockquote>Cумма пополнения: <b>${order.amount}₽</b></blockquote>`, { parse_mode: 'HTML'});
-        orderBase.updateOne({ lable: currenLable }, { $set: { status: true } });
-        dataBase.updateOne({ id: order.id }, { $inc: { balance: order.amount*1 } });
+        await orderBase.updateOne({ lable: currenLable }, { $set: { status: true } });
+        await dataBase.updateOne({ id: order.id }, { $inc: { balance: order.amount*1 } });
+        //new code
+        const userPay = await dataBase.findOne({ id: order.id });
+        if(userPay.prefer){
+          await dataBase.updateOne({ ref_code: userPay.prefer }, { $inc: { balance: (order.amount*1)*0.20 } });
+        }
+        
       });
       return true;
     } else {
@@ -1039,11 +1048,16 @@ app.post("/pay", async (req, res) => {
   if (update.update_type === "invoice_paid") {
     const invoice = update.payload;
     const currentAmount = update.payload.amount * 1;
-    orderBase.findOne({ invoice_id: invoice.invoice_id }).then((res_2) => {
+    orderBase.findOne({ invoice_id: invoice.invoice_id }).then(async (res_2) => {
       if (res_2) {
         bot.telegram.sendMessage(res_2.id, `<b>🎉 Ваш чек #${invoice.invoice_id}</b>
 <blockquote><b>💸 Вам начисленно:</b> ${currentAmount}₽</blockquote>`, { parse_mode: "HTML" });
         dataBase.updateOne({ id: res_2.id }, { $inc: { balance: currentAmount } });
+        // new code
+        const userPay = await dataBase.findOne({ id: res_2.id });
+        if(userPay.prefer){
+          await dataBase.updateOne({ ref_code: userPay.prefer }, { $inc: { balance: currentAmount*0.20 } });
+        }
       }
     });
   }
