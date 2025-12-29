@@ -919,26 +919,6 @@ bot.command("help", async (ctx) => {
 
 
 
-bot.command("drop", async (ctx) => {
-  dataBase.deleteMany({});
-  ctx.reply("DROP COLLECTION");
-});
-bot.command("drops", async (ctx) => {
-  orderBase.deleteMany({});
-  ctx.reply("DROP COLLECTION");
-});
-bot.command("add", async (ctx) => {
-  const { id } = ctx.from;
-  dataBase.updateOne({ id }, { $set: { balance: 400 } }).then(async (res) => { 
-    ctx.reply('+ 1000');
-  });
-});
-bot.command("set", async (ctx) => {
-  const { id } = ctx.from;
-  dataBase.updateOne({ id }, { $set: { balance: 0 } }).then(async (res) => { 
-    ctx.reply('set = 0');
-  });
-});
 
 
 
