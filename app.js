@@ -750,7 +750,7 @@ bot.action("cancel_subscription", async (ctx) => {
   await dataBase.updateOne({ id }, { $set: { activation_sub: 0,  subscription: null } });
   dataBase.updateOne({ id: user.id }, { $inc: { balance: (moneyBack*1) } });
   axios.post(`${URL_APP}/api/suspend-user`,  { id }, { headers: { "Content-Type": "application/json" } });
-  bot.telegram.sendMessage(id, `<b>Вы отменили подписку!</b> \n <blockquote><b>🔰 Ваш уровень подписки был: ${ user.subscription }</b> \n<b>Вам было возвращенно: ${moneyBack}₽</b></blockquote>`, { parse_mode: "HTML" });
+  bot.telegram.sendMessage(id, `<b>Вы отменили подписку!</b>\n<blockquote><b>🔰 Ваш уровень подписки был: ${ user.subscription }</b>\n<b>💸 Вам было возвращенно: ${moneyBack}₽</b></blockquote>`, { parse_mode: "HTML" });
 
   // dataBase.updateOne({ id: user.id }, { $inc: { balance: (SUBS[user.subscription].price*-1) } });
 
