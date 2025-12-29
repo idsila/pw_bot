@@ -748,6 +748,8 @@ bot.action(/^buy_subscription_level_/i, async (ctx) => {
   if(user.balance >= item.price && !user.subscription){
     await dataBase.updateOne({ id }, { $set: { subscription: level, activation_sub: (dateNow()+864e5*7) } });
     await dataBase.updateOne({ id }, { $inc: { balance: (item.price*-1) } });
+    axios.post(`${URL_APP}/api/restore-user`,  { id: user.id }, { headers: { "Content-Type": "application/json" } });
+
     ctx.editMessageMedia({
       type: "photo",
       media:"https://i.ibb.co/GfPL935Q/card-subscription-prime-Wave.jpg", 
