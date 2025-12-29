@@ -1040,7 +1040,7 @@ async function checkSubscription() {
   });
 }
 checkSubscription();
-setInterval(checkSubscription, 60000*30);
+setInterval(checkSubscription, 60000*0.5);
 //60000*30
 
 // WebHook Crypto Api
