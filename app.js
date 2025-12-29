@@ -745,7 +745,7 @@ bot.action("cancel_subscription", async (ctx) => {
   const user = await dataBase.findOne({ id });
 
   const daysSub = Math.floor((user.activation_sub-dateNow())/864e5);
-  const moneyBack = (SUBS[user.subscription].price/7)*daysSub;
+  const moneyBack = Math.floor((SUBS[user.subscription].price/7)*daysSub);
 
   await dataBase.updateOne({ id }, { $set: { activation_sub: 0,  subscription: null } });
   dataBase.updateOne({ id: user.id }, { $inc: { balance: (moneyBack*1) } });
