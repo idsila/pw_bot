@@ -6,7 +6,6 @@ const commands = require("./commands.js");
 const DB = require("./connectDB.js");
 const dataBase = DB.connect('pw_bot');
 const orderBase = DB.connect('pw_orders_bot');
-
 const subsBase = DB.connect('pw_subscription');
 
 const { Telegraf, session, Scenes } = require("telegraf");
@@ -16,10 +15,9 @@ const cors = require("cors");
 const app = express();
 const querystring = require("querystring");
 
-
 // Переменные для работы
 const ADMIN_ID = process.env.ADMIN_ID;
-
+const URL_APP = process.env.URL_APP;
 
 app.use(cors({ methods: ["GET", "POST"] }));
 app.use(express.json());
@@ -1032,7 +1030,11 @@ async function checkSubscription() {
       }
       else{
         dataBase.updateOne({ id: user.id }, { $set: { activation_sub: 0,  subscription: null } });
+        axios.post(`${URL_APP}/api/suspend-user`,  { id: user.id }, { headers: { "Content-Type": "application/json" } });
+        
+
         bot.telegram.sendMessage(user.id, `<b>Подписка не была продленна на вашем счету мало средств</b> \n <blockquote><b>🔰 Ваш уровень подписки был: ${ user.subscription }</b> </blockquote>`, { parse_mode: "HTML" });
+
       }
     }
   });
