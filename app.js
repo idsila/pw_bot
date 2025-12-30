@@ -464,10 +464,10 @@ bot.action("pay_umoney", async (ctx) => {
       reply_markup: {
         inline_keyboard: [
           [
+            { text: "50₽", callback_data: `pay_umoney_50` },
             { text: "100₽", callback_data: `pay_umoney_100` },
-            { text: "200₽", callback_data: `pay_umoney_150` },
-            { text: "400₽", callback_data: `pay_umoney_300` },
-            { text: "600₽", callback_data: `pay_umoney_600` },
+            { text: "200₽", callback_data: `pay_umoney_200` },
+            { text: "400₽", callback_data: `pay_umoney_300` }
           ],
           [{ text: "<< Назад", callback_data: `pay_balance` }],
         ],
